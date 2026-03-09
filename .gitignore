@@ -67,10 +67,9 @@ venv.bak/
 db.sqlite3
 db.sqlite3-journal
 media/
-# Podrías querer comentar o descomentar la carpeta de static dependiendo de tu preferencia
-# staticfiles/ 
 
 # =========================
 # Temporary & Personal Files
 # =========================
 *.ics
+
