@@ -138,7 +138,7 @@ const EmptyEditorState = ({ onNew }: { onNew: () => void }) => (
         </div>
 
         <div className="text-center space-y-2">
-            <p className="text-hk-text/50 font-serif text-lg tracking-wide">El grimorio está vacío</p>
+            <p className="text-hk-text/50 font-serif text-lg tracking-wide">No hay nada aquí aún</p>
             <p className="text-hk-text-muted/40 text-xs tracking-widest uppercase">
                 Selecciona una nota o crea una nueva
             </p>
@@ -166,6 +166,18 @@ export const NotesPage = () => {
     const [noteIcon, setNoteIcon] = useState<string | null>(null);
     const [showIconPicker, setShowIconPicker] = useState(false);
     const iconPickerRef = useRef<HTMLDivElement>(null);
+
+    // Initialize global spacing from local storage for the view mode
+    useEffect(() => {
+        const storedLineHeight = localStorage.getItem('hk-editor-line-height');
+        const storedGap = localStorage.getItem('hk-editor-paragraph-gap');
+        if (storedLineHeight) {
+            document.documentElement.style.setProperty('--editor-line-height', storedLineHeight);
+        }
+        if (storedGap) {
+            document.documentElement.style.setProperty('--editor-paragraph-gap', storedGap);
+        }
+    }, []);
 
     const [isCreatingCategory, setIsCreatingCategory] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
@@ -385,7 +397,7 @@ export const NotesPage = () => {
                 <div className="notes-sidebar-footer">
                     <div className="sidebar-divider-line" />
                     <span className="text-[9px] uppercase tracking-[0.2em] text-hk-text-muted/30">
-                        Grimorio Personal
+                        Notas Personales
                     </span>
                     <div className="sidebar-divider-line" />
                 </div>
@@ -631,6 +643,27 @@ export const NotesPage = () => {
                                 <div
                                     className="prose prose-invert max-w-none text-hk-text notes-view-content"
                                     dangerouslySetInnerHTML={{ __html: selectedNote?.content || '' }}
+                                    onClick={(e) => {
+                                        const target = e.target as HTMLElement;
+                                        if (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox') {
+                                            const li = target.closest('li[data-type="taskItem"]');
+                                            if (li) {
+                                                const isChecked = (target as HTMLInputElement).checked;
+                                                li.setAttribute('data-checked', isChecked ? 'true' : 'false');
+                                                if (isChecked) {
+                                                    target.setAttribute('checked', 'checked');
+                                                } else {
+                                                    target.removeAttribute('checked');
+                                                }
+                                                const newContent = e.currentTarget.innerHTML;
+                                                updateMutation.mutate({
+                                                    id: selectedNote!.id,
+                                                    data: { content: newContent }
+                                                });
+                                                setContent(newContent);
+                                            }
+                                        }
+                                    }}
                                 />
                             )}
                         </div>
