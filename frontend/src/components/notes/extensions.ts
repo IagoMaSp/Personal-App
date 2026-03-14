@@ -31,13 +31,13 @@ export const SpacingExtension = Extension.create({
 
     addCommands() {
         return {
-            setLineHeight: (lineHeight: string) => ({ commands }) => {
+            setLineHeight: (lineHeight: string) => ({ commands }: any) => {
                 return commands.setNode('paragraph', { lineHeight }) ||
-                       commands.setNode('heading', { lineHeight });
+                    commands.setNode('heading', { lineHeight });
             },
-            setMarginGap: (marginGap: string) => ({ commands }) => {
+            setMarginGap: (marginGap: string) => ({ commands }: any) => {
                 return commands.setNode('paragraph', { marginGap }) ||
-                       commands.setNode('heading', { marginGap });
+                    commands.setNode('heading', { marginGap });
             },
         } as any;
     },
