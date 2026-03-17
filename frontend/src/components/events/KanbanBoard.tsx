@@ -85,7 +85,8 @@ export const KanbanBoard = ({ columns, events: initialEvents, onEventClick, onOr
         if (isActiveEvent && isOverColumn) {
             setLocalEvents((prevEvents) => {
                 const activeIndex = prevEvents.findIndex((t) => t.id.toString() === activeId);
-                const colId = Number(overId);
+                const colIdStr = String(overId).replace('col-', '');
+                const colId = Number(colIdStr);
 
                 if (prevEvents[activeIndex].column !== colId) {
                     const newEvents = [...prevEvents];

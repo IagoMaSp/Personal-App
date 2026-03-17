@@ -10,54 +10,97 @@ interface KanbanColumnProps {
     onEventClick: (e: React.MouseEvent, event: Event) => void;
 }
 
+const COLUMN_ACCENTS: Record<string, string> = {
+    'To Do': '#6b8ea5',
+    'In Progress': '#f59e0b',
+    'Done': '#10b981',
+};
+
+const COLUMN_NAMES: Record<string, string> = {
+    'To Do': 'Pendiente',
+    'In Progress': 'En Progreso',
+    'Done': 'Completado',
+};
+
 export const KanbanColumn = ({ column, events, onEventClick }: KanbanColumnProps) => {
     const { setNodeRef, isOver } = useDroppable({
-        id: column.id.toString(),
-        data: {
-            type: 'Column',
-            column
-        }
+        id: `col-${column.id}`,
+        data: { type: 'Column', column }
     });
 
     const eventIds = useMemo(() => events.map(e => e.id.toString()), [events]);
 
     const isOverLimit = column.wip_limit > 0 && events.length > column.wip_limit;
-    // Highlight red if it's over limit, or if it's currently dragging over and WILL be over limit.
     const showWarning = isOverLimit || (isOver && column.wip_limit > 0 && (events.length + 1) > column.wip_limit);
 
+    const accent = COLUMN_ACCENTS[column.name] ?? '#6b8ea5';
+    const displayName = COLUMN_NAMES[column.name] ?? column.name;
+
+    // Progress bar: only if has wip limit
+    const wipPct = column.wip_limit > 0 ? Math.min(100, (events.length / column.wip_limit) * 100) : null;
+
     return (
-        <div className="flex flex-col flex-none w-[320px] bg-black/20 rounded-xl max-h-full border border-white/5 overflow-hidden">
-            <div className={`p-4 flex items-center justify-between border-b border-white/5 shadow-sm
-                ${showWarning ? 'bg-red-500/10' : 'bg-black/20'} transition-colors duration-300`}>
+        <div
+            className={`kanban-col ${isOver ? 'kanban-col--over' : ''} ${showWarning ? 'kanban-col--warn' : ''}`}
+            style={{ '--col-accent': accent } as React.CSSProperties}
+        >
+            {/* Column top accent line */}
+            <div className="kanban-col-accent-line" style={{ background: showWarning ? '#ef4444' : accent }} />
+
+            {/* Header */}
+            <div className="kanban-col-header">
                 <div className="flex items-center gap-2">
-                    <h3 className="font-serif font-bold text-hk-text tracking-wide">
-                        {column.name === 'To Do' ? 'Pendiente' : column.name === 'In Progress' ? 'En progreso' : column.name === 'Done' ? 'Completado' : column.name}
-                    </h3>
-                    <span className="flex items-center justify-center w-5 h-5 rounded-full bg-hk-accent/20 text-hk-accent text-xs font-medium">
+                    {/* Colored dot */}
+                    <span
+                        className="kanban-col-dot"
+                        style={{ background: showWarning ? '#ef4444' : accent, boxShadow: `0 0 6px ${showWarning ? '#ef4444' : accent}80` }}
+                    />
+                    <h3 className="kanban-col-name">{displayName}</h3>
+                    <span
+                        className="kanban-col-count"
+                        style={{ background: `${accent}20`, color: accent, border: `1px solid ${accent}30` }}
+                    >
                         {events.length}
                     </span>
                 </div>
+
                 {column.wip_limit > 0 && (
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full border
-                        ${showWarning ? 'text-red-400 border-red-500/30 bg-red-500/10' : 'text-hk-text-muted/60 border-white/10'}`}>
+                    <span className={`kanban-col-wip ${showWarning ? 'kanban-col-wip--warn' : ''}`}>
                         Máx: {column.wip_limit}
                     </span>
                 )}
             </div>
 
+            {/* WIP progress bar */}
+            {wipPct !== null && (
+                <div className="kanban-col-progress-track">
+                    <div
+                        className="kanban-col-progress-fill"
+                        style={{
+                            width: `${wipPct}%`,
+                            background: showWarning
+                                ? 'linear-gradient(90deg, #dc2626, #ef4444)'
+                                : `linear-gradient(90deg, ${accent}80, ${accent})`
+                        }}
+                    />
+                </div>
+            )}
+
+            {/* Drop zone */}
             <div
                 ref={setNodeRef}
-                className={`p-3 flex-1 overflow-y-auto min-h-[150px] transition-colors
-                    ${isOver ? 'bg-white/[0.02]' : ''}`}
+                className={`kanban-col-body ${isOver ? 'kanban-col-body--over' : ''}`}
             >
                 <SortableContext items={eventIds} strategy={verticalListSortingStrategy}>
-                    {events.map(event => (
-                        <EventCard key={event.id} event={event} onClick={onEventClick} />
+                    {events.map((event, idx) => (
+                        <EventCard key={event.id} event={event} onClick={onEventClick} index={idx} />
                     ))}
                 </SortableContext>
+
                 {events.length === 0 && (
-                    <div className="h-full flex items-center justify-center text-sm text-hk-text-muted/30 italic pb-10">
-                        Arrastra eventos aquí
+                    <div className="kanban-col-empty">
+                        <div className="kanban-col-empty-ring" style={{ borderColor: `${accent}25` }} />
+                        <p className="kanban-col-empty-text">Arrastra eventos aquí</p>
                     </div>
                 )}
             </div>

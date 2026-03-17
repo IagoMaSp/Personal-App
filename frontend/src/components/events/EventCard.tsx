@@ -2,13 +2,14 @@ import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Event } from '../../api/events';
-import { Calendar, CheckSquare, AlertCircle } from 'lucide-react';
+import { Calendar, CheckSquare, AlertCircle, GripVertical } from 'lucide-react';
 import { parseISO, format, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 interface EventCardProps {
     event: Event;
     onClick: (e: React.MouseEvent, event: Event) => void;
+    index?: number;
 }
 
 const LEGACY_MAP: Record<string, string> = {
@@ -20,25 +21,34 @@ const LEGACY_MAP: Record<string, string> = {
 
 const toHex = (c: string) => LEGACY_MAP[c] ?? (c?.startsWith('#') ? c : '#6b8ea5');
 
-export const EventCard = ({ event, onClick }: EventCardProps) => {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: event.id.toString(), data: { type: 'Event', event } });
+const PRIORITY_CONFIG = {
+    High: { label: 'Alta', color: '#ef4444', bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.25)' },
+    Medium: { label: 'Med', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.25)' },
+    Low: { label: 'Baja', color: '#6b8ea5', bg: 'rgba(107,142,165,0.12)', border: 'rgba(107,142,165,0.25)' },
+} as const;
+
+export const EventCard = ({ event, onClick, index = 0 }: EventCardProps) => {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+        id: event.id.toString(),
+        data: { type: 'Event', event },
+    });
 
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
-        opacity: isDragging ? 0.4 : 1,
+        opacity: isDragging ? 0.3 : 1,
+        animationDelay: `${index * 0.04}s`,
     };
 
     const isPastOrDueSoon = () => {
         if (!event.date) return false;
-        const eventDate = parseISO(event.date);
-        const now = new Date();
-        const diff = differenceInDays(eventDate, now);
-        return diff < 2; // Past, today, or tomorrow
+        return differenceInDays(parseISO(event.date), new Date()) < 2;
     };
 
     const isDue = isPastOrDueSoon();
     const eventColor = toHex(event.color);
+    const priority = event.priority as keyof typeof PRIORITY_CONFIG | undefined;
+    const priorityCfg = priority ? PRIORITY_CONFIG[priority] : null;
 
     const checkListTotal = event.subtasks?.length || 0;
     const checkListDone = event.subtasks?.filter(s => s.is_completed).length || 0;
@@ -49,60 +59,71 @@ export const EventCard = ({ event, onClick }: EventCardProps) => {
             ref={setNodeRef}
             style={style}
             {...attributes}
-            {...listeners}
             onClick={(e) => onClick(e, event)}
-            className={`
-                relative p-4 mb-3 rounded-lg shadow-sm border border-white/5 bg-hk-bg cursor-grab active:cursor-grabbing hover:bg-white/[0.02] transition-colors
-                ${isDue ? 'border-red-500/50 shadow-[0_0_10px_rgba(239,68,68,0.1)]' : ''}
-            `}
+            className={`ev-card ${isDragging ? 'ev-card--dragging' : ''} ${isDue ? 'ev-card--due' : ''}`}
         >
-            <div className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-lg" style={{ backgroundColor: eventColor }} />
+            {/* Colored left border accent */}
+            <div className="ev-card-accent" style={{ background: eventColor, boxShadow: `0 0 8px ${eventColor}60` }} />
 
-            <div className="ml-2">
-                <div className="flex justify-between items-start mb-2 gap-2">
-                    <h4 className="font-semibold text-hk-text text-sm line-clamp-2 leading-tight flex-1">
-                        {event.title}
-                    </h4>
-                    {event.priority === 'High' && (
-                        <span className="shrink-0 text-[10px] uppercase font-bold text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded">Alta</span>
-                    )}
-                    {event.priority === 'Medium' && (
-                        <span className="shrink-0 text-[10px] uppercase font-bold text-yellow-400 bg-yellow-400/10 px-1.5 py-0.5 rounded">Med</span>
-                    )}
-                    {isDue && (
-                        <AlertCircle className="w-4 h-4 text-red-500 absolute top-2 right-2 opacity-70" />
-                    )}
+            {/* Drag handle */}
+            <div className="ev-card-drag-handle" {...listeners} onClick={(e) => e.stopPropagation()}>
+                <GripVertical className="w-3 h-3 text-hk-text-muted/30" />
+            </div>
+
+            {/* Content */}
+            <div className="ev-card-body">
+                {/* Title row */}
+                <div className="flex items-start justify-between gap-2 mb-2">
+                    <h4 className="ev-card-title">{event.title}</h4>
+                    <div className="flex items-center gap-1 shrink-0">
+                        {priorityCfg && (
+                            <span
+                                className="ev-card-priority"
+                                style={{ color: priorityCfg.color, background: priorityCfg.bg, border: `1px solid ${priorityCfg.border}` }}
+                            >
+                                {priorityCfg.label}
+                            </span>
+                        )}
+                        {isDue && <AlertCircle className="w-3.5 h-3.5 text-red-400/80" />}
+                    </div>
                 </div>
 
+                {/* Tags */}
                 {event.tags_details && event.tags_details.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-3 mt-2">
+                    <div className="flex flex-wrap gap-1 mb-2">
                         {event.tags_details.map(tag => (
-                            <span key={tag.id} className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-hk-text-muted/80">
+                            <span key={tag.id} className="ev-card-tag">
                                 {tag.name}
                             </span>
                         ))}
                     </div>
                 )}
 
-                <div className="flex items-center gap-4 mt-auto text-xs text-hk-text-muted/60">
-                    <div className={`flex items-center gap-1.5 ${isDue ? 'text-red-400/80 font-medium' : ''}`}>
-                        <Calendar className="w-3.5 h-3.5" />
+                {/* Footer */}
+                <div className="ev-card-footer">
+                    <div className={`ev-card-date ${isDue ? 'ev-card-date--due' : ''}`}>
+                        <Calendar className="w-3 h-3" />
                         <span>{event.date ? format(parseISO(event.date), 'd MMM', { locale: es }) : 'Sin fecha'}</span>
                     </div>
-
                     {checkListTotal > 0 && (
-                        <div className="flex items-center gap-1.5">
-                            <CheckSquare className="w-3.5 h-3.5" />
+                        <div className="ev-card-checklist">
+                            <CheckSquare className="w-3 h-3" />
                             <span>{checkListDone}/{checkListTotal}</span>
                         </div>
                     )}
                 </div>
 
+                {/* Subtask progress bar */}
                 {checkListProgress !== null && (
-                    <div className="mt-2.5 h-1 w-full bg-black/40 rounded-full overflow-hidden">
+                    <div className="ev-card-progress-track">
                         <div
-                            className="h-full bg-hk-accent/60 transition-all duration-300"
-                            style={{ width: `${checkListProgress}%` }}
+                            className="ev-card-progress-fill"
+                            style={{
+                                width: `${checkListProgress}%`,
+                                background: checkListProgress === 100
+                                    ? 'linear-gradient(90deg, #059669, #10b981)'
+                                    : `linear-gradient(90deg, ${eventColor}80, ${eventColor})`
+                            }}
                         />
                     </div>
                 )}
