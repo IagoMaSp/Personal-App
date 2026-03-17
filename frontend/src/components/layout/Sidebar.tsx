@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, FileText, BookOpen, Calendar, Clock } from 'lucide-react';
+import { Home, FileText, BookOpen, Calendar, Clock, Wallet } from 'lucide-react';
 
 const navItems = [
     { name: 'Home', path: '/', icon: Home },
@@ -7,6 +7,7 @@ const navItems = [
     { name: 'Libros', path: '/books', icon: BookOpen },
     { name: 'Horarios', path: '/schedules', icon: Clock },
     { name: 'Eventos', path: '/events', icon: Calendar },
+    { name: 'Finanzas', path: '/finances', icon: Wallet },
 ];
 
 export const Sidebar = () => (
