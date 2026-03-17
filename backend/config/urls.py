@@ -28,6 +28,7 @@ urlpatterns = [
     path('api/v1/', include('apps.events.urls')),
     path('api/v1/search/', include('apps.search.urls')),
     path('api/v1/finances/', include('apps.finances.urls')),
+    path('api/v1/habits/', include('apps.habits.urls')),
 ]
 
 if settings.DEBUG:

@@ -2,6 +2,7 @@ from django.db import models
 
 class BoardColumn(models.Model):
     name = models.CharField(max_length=100)
+    color = models.CharField(max_length=50, default='#333333')
     order = models.IntegerField(default=0)
     wip_limit = models.IntegerField(default=0)
     

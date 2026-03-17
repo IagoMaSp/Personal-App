@@ -6,6 +6,8 @@ from apps.notes.models import Note
 from apps.notes.serializers import NoteSerializer
 from apps.books.models import Book
 from apps.books.serializers import BookSerializer
+from apps.habits.models import Habit
+from apps.habits.serializers import HabitSerializer
 
 
 class SearchView(APIView):
@@ -14,7 +16,7 @@ class SearchView(APIView):
     def get(self, request):
         query = request.query_params.get('q', '').strip()
         if not query:
-            return Response({'notes': [], 'books': []})
+            return Response({'notes': [], 'books': [], 'habits': []})
 
         # Advanced syntax: "content:keyword" searches inside note body
         content_search = False
@@ -23,7 +25,7 @@ class SearchView(APIView):
             content_search = True
             search_term = query[8:].strip()
 
-        results = {'notes': [], 'books': []}
+        results = {'notes': [], 'books': [], 'habits': []}
 
         if search_term:
             if content_search:
@@ -37,5 +39,8 @@ class SearchView(APIView):
                 # Also match by author when doing a plain search
                 books = books | Book.objects.filter(author__icontains=search_term)
             results['books'] = BookSerializer(books.distinct(), many=True).data
+            
+            habits = Habit.objects.filter(name__icontains=search_term)
+            results['habits'] = HabitSerializer(habits, many=True).data
 
         return Response(results)

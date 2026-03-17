@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { notesApi, categoriesApi } from '../api/notes';
 import type { Note } from '../api/notes';
 import { TipTapEditor } from '../components/notes/TipTapEditor';
-import { Pin, Trash2, Plus, Save, X, Search, BookOpen, Sparkles, Star, Home, Heart, Circle, Moon, GraduationCap, Music, Zap, Globe, Smile, Coffee, Target, Bookmark, FileText } from 'lucide-react';
+import { Pin, Trash2, Plus, Save, X, Search, BookOpen, Sparkles, Star, Home, Heart, Circle, Moon, GraduationCap, Music, Zap, Globe, Smile, Coffee, Target, Bookmark, FileText, Download } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useSearchParams } from 'react-router-dom';
@@ -320,6 +320,47 @@ export const NotesPage = () => {
 
     const isSaving = updateMutation.isPending || createMutation.isPending;
 
+    const exportToMarkdown = (note: Note) => {
+        let md = note.content;
+
+        md = md.replace(/<h1>(.*?)<\/h1>/gi, '# $1\n\n');
+        md = md.replace(/<h2>(.*?)<\/h2>/gi, '## $1\n\n');
+        md = md.replace(/<h3>(.*?)<\/h3>/gi, '### $1\n\n');
+        md = md.replace(/<p>(.*?)<\/p>/gi, '$1\n\n');
+        md = md.replace(/<blockquote>(.*?)<\/blockquote>/gi, '> $1\n\n');
+
+        md = md.replace(/<li data-type="taskItem" data-checked="true">.*?<div>(.*?)<\/div><\/li>/gi, '- [x] $1\n');
+        md = md.replace(/<li data-type="taskItem" data-checked="false">.*?<div>(.*?)<\/div><\/li>/gi, '- [ ] $1\n');
+        md = md.replace(/<li data-type="taskItem">.*?<div>(.*?)<\/div><\/li>/gi, '- [ ] $1\n');
+
+        md = md.replace(/<li>(.*?)<\/li>/gi, '- $1\n');
+        md = md.replace(/<ul>(.*?)<\/ul>/gi, '\n$1\n');
+        md = md.replace(/<ol>(.*?)<\/ol>/gi, '\n$1\n');
+
+        md = md.replace(/<strong>(.*?)<\/strong>/gi, '**$1**');
+        md = md.replace(/<em>(.*?)<\/em>/gi, '*$1*');
+        md = md.replace(/<s>(.*?)<\/s>/gi, '~~$1~~');
+        md = md.replace(/<code>(.*?)<\/code>/gi, '`$1`');
+
+        md = md.replace(/<[^>]+>/g, '');
+
+        const textarea = document.createElement('textarea');
+        textarea.innerHTML = md;
+        md = textarea.value;
+
+        const fullText = `# ${note.title}\n\n${md}`;
+
+        const blob = new Blob([fullText], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${note.title.toLowerCase().replace(/\\s+/g, '-')}.md`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <div className="notes-page-layout">
 
@@ -611,6 +652,16 @@ export const NotesPage = () => {
                                         <button onClick={() => setIsEditing(true)} className="edit-btn">
                                             Editar
                                         </button>
+
+                                        {selectedNote && (
+                                            <button
+                                                onClick={() => exportToMarkdown(selectedNote)}
+                                                className="editor-action-btn"
+                                                title="Exportar como Markdown"
+                                            >
+                                                <Download className="w-4 h-4" />
+                                            </button>
+                                        )}
 
                                         {showDeleteConfirm ? (
                                             <div className="delete-confirm-bar">

@@ -211,7 +211,7 @@ export const TipTapEditor = ({ content, onChange }: TipTapEditorProps) => {
                 </div>
 
                 <div className="text-[10px] text-hk-text-muted/50 font-mono tracking-widest pl-2 ml-1 border-l border-hk-border/60">
-                    EDIC.
+                    {editor.getText().trim() ? editor.getText().trim().split(/\s+/).length : 0} PALABRAS
                 </div>
             </div>
 

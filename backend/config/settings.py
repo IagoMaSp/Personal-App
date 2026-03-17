@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'apps.events',
     'apps.search',
     'apps.finances',
+    'apps.habits',
 ]
 
 MIDDLEWARE = [

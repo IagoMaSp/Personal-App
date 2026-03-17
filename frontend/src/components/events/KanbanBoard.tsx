@@ -17,6 +17,10 @@ import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import type { Event, BoardColumn } from '../../api/events';
 import { KanbanColumn } from './KanbanColumn';
 import { EventCard } from './EventCard';
+import { ColumnEditorModal } from './ColumnEditorModal';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { columnsApi } from '../../api/events';
+import { Plus } from 'lucide-react';
 
 interface KanbanBoardProps {
     columns: BoardColumn[];
@@ -26,8 +30,36 @@ interface KanbanBoardProps {
 }
 
 export const KanbanBoard = ({ columns, events: initialEvents, onEventClick, onOrderChange }: KanbanBoardProps) => {
+    const queryClient = useQueryClient();
     const [activeEvent, setActiveEvent] = useState<Event | null>(null);
     const [localEvents, setLocalEvents] = useState<Event[]>(initialEvents);
+
+    // Column Editor State
+    const [isEditingCol, setIsEditingCol] = useState(false);
+    const [selectedCol, setSelectedCol] = useState<BoardColumn | null>(null);
+
+    const createColMutation = useMutation({
+        mutationFn: columnsApi.create,
+        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['columns'] }); setIsEditingCol(false); }
+    });
+
+    const updateColMutation = useMutation({
+        mutationFn: ({ id, data }: { id: number; data: Partial<BoardColumn> }) => columnsApi.update(id, data),
+        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['columns'] }); setIsEditingCol(false); }
+    });
+
+    const deleteColMutation = useMutation({
+        mutationFn: columnsApi.delete,
+        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['columns'] }); setIsEditingCol(false); }
+    });
+
+    const handleSaveColumn = (data: Partial<BoardColumn>) => {
+        if (selectedCol) {
+            updateColMutation.mutate({ id: selectedCol.id, data });
+        } else {
+            createColMutation.mutate({ ...data, order: columns.length });
+        }
+    };
 
     useEffect(() => {
         setLocalEvents(initialEvents);
@@ -134,14 +166,26 @@ export const KanbanBoard = ({ columns, events: initialEvents, onEventClick, onOr
                     {columns.map(col => {
                         const colEvents = localEvents.filter(e => e.column === col.id);
                         return (
-                            <KanbanColumn
-                                key={col.id}
-                                column={col}
-                                events={colEvents}
-                                onEventClick={onEventClick}
-                            />
+                            <div key={col.id} className="group shrink-0 h-full flex flex-col">
+                                <KanbanColumn
+                                    column={col}
+                                    events={colEvents}
+                                    onEventClick={onEventClick}
+                                    onEditColumn={(c) => { setSelectedCol(c); setIsEditingCol(true); }}
+                                />
+                            </div>
                         );
                     })}
+                    {/* Add Column Button */}
+                    <div className="shrink-0 w-80 h-full p-2">
+                        <button
+                            onClick={() => { setSelectedCol(null); setIsEditingCol(true); }}
+                            className="w-full flex items-center gap-2 justify-center py-3 bg-white/[0.02] hover:bg-white/5 border border-dashed border-white/10 hover:border-white/20 rounded-xl text-hk-text-muted hover:text-white transition-colors h-14"
+                        >
+                            <Plus className="w-4 h-4" />
+                            <span className="text-sm font-medium tracking-wide">Nueva Columna</span>
+                        </button>
+                    </div>
                 </div>
 
                 <DragOverlay>
@@ -152,6 +196,16 @@ export const KanbanBoard = ({ columns, events: initialEvents, onEventClick, onOr
                     ) : null}
                 </DragOverlay>
             </DndContext>
+
+            {/* Column Editor Modal */}
+            <ColumnEditorModal
+                isOpen={isEditingCol}
+                column={selectedCol}
+                onClose={() => setIsEditingCol(false)}
+                onSave={handleSaveColumn}
+                onDelete={(id) => deleteColMutation.mutate(id)}
+                isSaving={createColMutation.isPending || updateColMutation.isPending}
+            />
         </div>
     );
 };

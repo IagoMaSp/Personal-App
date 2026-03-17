@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Clock, Pin, BookOpen, Calendar, ArrowRight, Book as BookIcon, Sparkles, FileText } from 'lucide-react';
 import { getNoteIcon } from './NotesPage';
+import { WeatherWidget } from '../components/home/WeatherWidget';
 
 import { notesApi } from '../api/notes';
 import { booksApi } from '../api/books';
@@ -242,7 +243,10 @@ export const HomePage = () => {
                 </div>
 
                 {/* Right column */}
-                <div className="home-right-col">
+                <div className="home-right-col space-y-4">
+
+                    {/* Clima */}
+                    <WeatherWidget />
 
                     {/* Notas fijadas */}
                     <div className="home-card">

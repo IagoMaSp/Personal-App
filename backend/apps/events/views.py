@@ -1,13 +1,28 @@
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from .models import BoardColumn, Tag, Event, Subtask
 from .serializers import BoardColumnSerializer, TagSerializer, EventSerializer, SubtaskSerializer
 import datetime
 
 class BoardColumnViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = BoardColumn.objects.all()
     serializer_class = BoardColumnSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        from rest_framework import status
+        instance = self.get_object()
+        first_available_column = BoardColumn.objects.exclude(id=instance.id).order_by('order').first()
+        
+        if first_available_column:
+            Event.objects.filter(column=instance).update(column=first_available_column)
+        else:
+            Event.objects.filter(column=instance).update(column=None)
+            
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['post'])
     def update_order(self, request):
@@ -21,14 +36,17 @@ class BoardColumnViewSet(viewsets.ModelViewSet):
         return Response({'status': 'order updated'})
 
 class TagViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
 
 class SubtaskViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = Subtask.objects.all()
     serializer_class = SubtaskSerializer
 
 class EventViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = Event.objects.all()
     serializer_class = EventSerializer
 

@@ -7,6 +7,7 @@ import { BooksPage } from './pages/BooksPage';
 import { SchedulesPage } from './pages/SchedulesPage';
 import { EventsPage } from './pages/EventsPage';
 import { FinancesPage } from './pages/FinancesPage';
+import { HabitsPage } from './pages/HabitsPage';
 import { AuthGuard } from './components/auth/AuthGuard';
 
 const queryClient = new QueryClient({
@@ -34,6 +35,7 @@ function App() {
             <Route path="schedules" element={<SchedulesPage />} />
             <Route path="events" element={<EventsPage />} />
             <Route path="finances" element={<FinancesPage />} />
+            <Route path="habits" element={<HabitsPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

@@ -152,7 +152,7 @@ export const EventsPage = () => {
                     <div className="ev-view-toggle">
                         <button
                             onClick={() => setViewMode('kanban')}
-                            className={`ev-view-btn ${viewMode === 'kanban' ? 'ev-view-btn--active' : ''}`}
+                            className="ev-view-btn ev-view-btn--active"
                             title="Vista Tablero"
                         >
                             <Layout className="w-3.5 h-3.5" />
@@ -160,7 +160,7 @@ export const EventsPage = () => {
                         </button>
                         <button
                             onClick={() => setViewMode('calendar')}
-                            className={`ev-view-btn ${viewMode === 'calendar' ? 'ev-view-btn--active' : ''}`}
+                            className="ev-view-btn"
                             title="Vista Calendario"
                         >
                             <CalendarDays className="w-3.5 h-3.5" />

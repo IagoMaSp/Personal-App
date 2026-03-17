@@ -1,10 +1,12 @@
 import { api } from './client';
 import type { Note } from './notes';
 import type { Book } from './books';
+import type { Habit } from './habits';
 
 export interface SearchResults {
     notes: Note[];
     books: Book[];
+    habits: Habit[];
 }
 
 export const searchApi = {

@@ -9,6 +9,7 @@ export interface Tag {
 export interface BoardColumn {
     id: number;
     name: string;
+    color: string;
     order: number;
     wip_limit: number;
 }

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Moon, Sun, LogOut, BookOpen, FileText, X, Loader2 } from 'lucide-react';
+import { Search, Moon, Sun, LogOut, BookOpen, FileText, X, Loader2, Target } from 'lucide-react';
 import { useThemeStore } from '../../store/themeStore';
 import { useAuthStore } from '../../store/authStore';
 import { searchApi } from '../../api/search';
@@ -81,7 +81,7 @@ export const Topbar = () => {
         return () => document.removeEventListener('keydown', handler);
     }, []);
 
-    const totalResults = (results?.notes.length ?? 0) + (results?.books.length ?? 0);
+    const totalResults = (results?.notes.length ?? 0) + (results?.books.length ?? 0) + (results?.habits.length ?? 0);
 
     return (
         <header className="topbar">
@@ -200,6 +200,32 @@ export const Topbar = () => {
                                                         {BOOK_STATUS_LABELS[book.status].label}
                                                     </span>
                                                 )}
+                                                <div className="search-result-arrow">→</div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Habits section */}
+                                {results!.habits?.length > 0 && (
+                                    <div className="search-section">
+                                        <div className="search-section-header">
+                                            <Target className="w-3 h-3" />
+                                            Hábitos
+                                            <span className="search-section-count">{results!.habits.length}</span>
+                                        </div>
+                                        {results!.habits.map(habit => (
+                                            <button
+                                                key={habit.id}
+                                                onClick={() => navigate_('/habits')}
+                                                className="search-result-item group"
+                                            >
+                                                <div className="search-result-icon">
+                                                    <Target className="w-3.5 h-3.5" style={{ color: habit.color || '#6b8ea5' }} />
+                                                </div>
+                                                <div className="search-result-body">
+                                                    <div className="search-result-title">{habit.name}</div>
+                                                </div>
                                                 <div className="search-result-arrow">→</div>
                                             </button>
                                         ))}
